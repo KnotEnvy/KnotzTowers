@@ -11,25 +11,7 @@ for (let i = 0; i < placementTilesData.length; i+=20) {
     placementTilesData2D.push(placementTilesData.slice(i, i+20))
 }
 
-class PlacementTile {
-    constructor({position = {x:0, y:0}}) {
-        this.position = position
-        this.size = 64
-        this.color = 'rgba(255, 255, 255, 0.25)'
-    }
-    draw() {
-        c.fillStyle = this.color
-        c.fillRect(this.position.x, this.position.y, this.size,this.size) //tile height
-    }
-    update(mouse){
-        this.draw()
 
-        if (mouse.x > this.position.x && mouse.x < this.position.x + this.size &&
-            mouse.y > this.position.y && mouse.y < this.position.y + this.size) {
-
-        }
-    }
-}
 
 const placementTiles = []
 
@@ -59,50 +41,19 @@ image.onload = () => {
 
 image.src = 'images/gameMap.png'
 
-class Enemy {
-    constructor({position = {x:0, y:0}}) {
-        this.position = position
-        this.width = 100
-        this.height = 100
-        this.waypointIndex = 0
-        this.center = {
-            x: this.position.x + this.width /2,
-            y: this.position.y + this.height /2
-        }
-    }
-    draw() {
-        c.fillStyle = 'red'
-        c.fillRect(this.position.x ,this.position.y ,this.width,this.height)
-    }
-    update(){
-        this.draw()
-        
-        const waypoint = waypoints[this.waypointIndex]
-        const yDistance = waypoint.y - this.center.y
-        const xDistance = waypoint.x - this.center.x
-        const angle  = Math.atan2(yDistance, xDistance)
-        this.position.x += Math.cos(angle)
-        this.position.y += Math.sin(angle)
-        this.center = {
-            x: this.position.x + this.width /2,
-            y: this.position.y + this.height /2
-        }
 
-        if (Math.round(this.center.x) === Math.round(waypoint.x) && 
-            Math.round(this.center.y) === Math.round(waypoint.y) && 
-            this.waypointIndex < waypoints.length -1) {
-            this.waypointIndex++
-        }
-    }
-}
 
 const enemies = []
 for (let i = 1; i < 10; i++) {
     const xOffset = i * 150 // distance between enemies
     enemies.push(new Enemy({
-        position :{x: waypoints[0].x - xOffset, y: waypoints[0].y}
+        position: {x: waypoints[0].x - xOffset, y: waypoints[0].y}
     }))
 }
+
+const buildings = []
+let activeTile = undefined
+
 
 function animate() {
     requestAnimationFrame(animate)
@@ -114,6 +65,22 @@ function animate() {
     placementTiles.forEach((tile) => {
         tile.update(mouse)
     })
+    buildings.forEach((building) => {
+        building.draw()
+
+        for (let i = building.projectiles.length -1; i >=0; i--) {
+            const projectile = building.projectiles[i]
+        }
+
+            projectile.update()
+
+            const xDifference = projectile.enemy.center.x - projectile.position.x
+            const yDifference = projectile.enemy.center.y - projectile.position.y
+            const distance = Math.hypot(xDifference, yDifference)
+            if (distance < projectile.enemy.radius + projectile.radius) {
+                building.projectiles.splice(i, 1)
+            }
+   })
 }
 
 const mouse = {
@@ -121,10 +88,32 @@ const mouse = {
     y: undefined
 }
 
+canvas.addEventListener('click', (event) => {
+    if (activeTile && !activeTile.isOccupied) {
+        buildings.push(new Building({
+            position: {
+                x: activeTile.position.x,
+                y: activeTile.position.y
+
+            }
+        }))
+        activeTile.isOccupied = true
+    }
+})
+
 window.addEventListener('mousemove', (event) => {
     mouse.x = event.clientX
     mouse.y = event.clientY
-    console.log(event)
+    
+    activeTile = null
+    for (let i=0; i < placementTiles.length; i++){
+        const tile = placementTiles[i]
+        if (mouse.x > tile.position.x && mouse.x < tile.position.x + tile.size &&
+            mouse.y > tile.position.y && mouse.y < tile.position.y + tile.size) {
+            activeTile= tile
+        break
+        }
+    }
 })
 
 
