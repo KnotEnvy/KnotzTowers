@@ -1,6 +1,7 @@
 class Enemy extends Sprite{
     constructor({position = {x:0, y:0}}) {
-        super({position, imageSrc: 'images/orc.png', frames: { max:7}})
+        super({position, imageSrc: 'images/orc.png', 
+        frames: { max:7}})
         this.width = 100
         this.height = 100
         this.waypointIndex = 0
@@ -31,6 +32,7 @@ class Enemy extends Sprite{
     }
     update(){
         this.draw()
+        super.update()
         
         const waypoint = waypoints[this.waypointIndex]
         const yDistance = waypoint.y - this.center.y
