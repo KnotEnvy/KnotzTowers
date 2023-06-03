@@ -44,42 +44,70 @@ image.src = 'images/gameMap.png'
 
 
 const enemies = []
-for (let i = 1; i < 10; i++) {
-    const xOffset = i * 150 // distance between enemies
-    enemies.push(new Enemy({
-        position: {x: waypoints[0].x - xOffset, y: waypoints[0].y}
-    }))
+
+// amount of enemies being spawned per round
+function spawnEnemies(spawnCount) {
+    for (let i = 1; i < spawnCount +1; i++) {
+        const xOffset = i * 150 // distance between enemies
+        enemies.push(new Enemy({
+            position: {x: waypoints[0].x - xOffset, y: waypoints[0].y}
+        }))
+    }
 }
 
 const buildings = []
 let activeTile = undefined
-
+let enemyCount = 3
+spawnEnemies(enemyCount)
 
 function animate() {
     requestAnimationFrame(animate)
 
     c.drawImage(image, 0, 0)
-    enemies.forEach(enemy => {
+
+    for (let i = enemies.length -1; i >= 0; i--) {
+        const enemy = enemies[i]
         enemy.update()
-    })
+    }
     placementTiles.forEach((tile) => {
         tile.update(mouse)
     })
     buildings.forEach((building) => {
-        building.draw()
+        building.update()
+        building.target = null
+        const validEnemies = enemies.filter(enemy => {
+            //calc dist between enemies and building range collisions 
+            const xDifference = enemy.center.x - building.center.x
+            const yDifference = enemy.center.y - building.center.y
+            const distance = Math.hypot(xDifference, yDifference)
+            return distance < enemy.radius + building.radius
+        })
+        building.target = validEnemies[0]
 
-        for (let i = building.projectiles.length -1; i >=0; i--) {
+        for (let i = building.projectiles.length -1; i >= 0; i--) {
             const projectile = building.projectiles[i]
-        }
-
             projectile.update()
-
+            
+            //calc dist between enemies and projectiles for collisions
             const xDifference = projectile.enemy.center.x - projectile.position.x
             const yDifference = projectile.enemy.center.y - projectile.position.y
             const distance = Math.hypot(xDifference, yDifference)
             if (distance < projectile.enemy.radius + projectile.radius) {
+                projectile.enemy.health -= 20
+                if (projectile.enemy.health <= 0) {
+                    const enemyIndex = enemies.findIndex((enemy) => {
+                        return projectile.enemy === enemy
+                    })
+                    if (enemyIndex > -1) enemies.splice(enemyIndex, 1)
+                }
+                //tracking total enemies
+                if (enemies.length === 0) {
+                    enemyCount +=2
+                    spawnEnemies(enemyCount)
+                }
                 building.projectiles.splice(i, 1)
             }
+        }
    })
 }
 
